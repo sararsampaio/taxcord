@@ -1,0 +1,8 @@
+id|pident|qcovs|Taxonomy.kingdom|Taxonomy.phylum|Taxonomy.class|Taxonomy.order|Taxonomy.family|Taxonomy.genus|Taxonomy.species
+1|OTU_A| 99.5|100|Metazoa|Arthropoda|Insecta|Diptera|Mockidae|Mockia|Mockia alpha
+2|OTU_A| 99.0|100|Metazoa|Arthropoda|Insecta|Diptera|Mockidae|Mockia|Mockia alpha
+3|OTU_A| 98.0| 99|Metazoa|Arthropoda|Insecta|Diptera|Mockidae|Mockia|Mockia alpha
+4|OTU_B| 99.2|100|Metazoa|Arthropoda|Insecta|Diptera|Mockidae|Mockia|Mockia beta
+5|OTU_B| 98.5|100|Metazoa|Arthropoda|Insecta|Diptera|Mockidae|Mockia|Mockia beta
+6|OTU_B| 97.5| 99|Metazoa|Arthropoda|Insecta|Diptera|Mockidae|Mockia|Mockia gamma
+7|OTU_C| 99.9| 80|Metazoa|Arthropoda|Insecta|Diptera|Mockidae|Mockia|Mockia delta
