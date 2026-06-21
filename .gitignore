@@ -1,0 +1,45 @@
+# --- Project data (kept local, never shared) ---
+# Drop your own BLAST results, taxonomy outputs and reference databases here.
+data/*
+!data/README.md
+
+# Large reference / reference-derived files, wherever they land
+*.blast
+*.sql
+*.dmp
+*.accession2taxid
+*.accession2taxid.gz
+
+# Pipeline outputs
+*_Taxonomy.txt
+*Condensed*.txt
+*_condensed.csv
+*combined_taxonomy.csv
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# --- R ---
+.Rhistory
+.RData
+.Rproj.user/
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- SLURM logs ---
+*.out
+*.err
