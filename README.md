@@ -35,24 +35,42 @@ pip install -e .            # runtime use
 pip install -e ".[dev]"     # plus pytest, black, ruff
 ```
 
-The annotation step additionally needs R with the
-[`taxonomizr`](https://cran.r-project.org/package=taxonomizr) package:
-
-```r
-install.packages("taxonomizr")
-```
+The annotation step is an R script and relies on the third-party
+[`taxonomizr`](https://cran.r-project.org/package=taxonomizr) package (by Scott
+Sherrill-Mix — not part of `metatax`) to map NCBI taxids to lineages. You don't
+need to install it by hand: `annotate_taxonomy.R` installs it automatically if
+it's missing. To learn how it works or how to cite it, see its
+[CRAN page](https://cran.r-project.org/package=taxonomizr) or run
+`citation("taxonomizr")` in R.
 
 ## Usage
 
 ### 1. Annotate BLAST hits with taxonomy (R)
 
 ```bash
+Rscript scripts/annotate_taxonomy.R <blast_input> <taxonomy_output> [accessionTaxa.sql] [--force]
+```
+
+```bash
 Rscript scripts/annotate_taxonomy.R data/blast/sample.blast data/taxonomy/sample_annotated.txt
 ```
 
-The input is a tab-delimited BLAST table containing an `staxids` column. On
-first run the script builds a local NCBI taxonomy database (`accessionTaxa.sql`,
-several GB); pass an existing one as a third argument to reuse it.
+The input is a tab-delimited BLAST table containing an `staxids` column; the
+script (via `taxonomizr`) turns each taxid into a full lineage and writes a
+pipe-delimited table.
+
+To do that it needs a local NCBI taxonomy database (`accessionTaxa.sql`, several
+GB). The script finds or fetches it for you:
+
+- **Have one already?** Pass its path as the third argument — it can live in any
+  folder, separate from the script or your BLAST input.
+- **Don't pass a path?** It looks for `accessionTaxa.sql` in a `data/` folder
+  next to the script, and downloads it there on first run if it's absent.
+- An existing database is **never re-downloaded or overwritten** unless you add
+  `--force`.
+
+The download is several GB, so the first run takes a while; later runs reuse the
+same file.
 
 ### 2. Condense hits into one lineage per query
 
