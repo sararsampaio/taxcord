@@ -1,6 +1,6 @@
 """Trim taxonomic assignments to the finest rank with occurrence support.
 
-Given a table that carries occurrence counts from GBIF (``IP.<rank>``) and
+Given a table that carries occurrence counts from GBIF (``GBIF.<rank>``) and
 BOLD (``BOLD.<rank>``), keep each lineage only down to the finest rank that
 either source actually recorded in the target region.
 """
@@ -30,7 +30,7 @@ NCBI_RENAME = {
 def _supported_rank(row):
     """Return the finest rank with a recorded occurrence count, or None."""
     for rank in OCCURRENCE_RANKS:
-        for prefix in ("IP", "BOLD"):
+        for prefix in ("GBIF", "BOLD"):
             # isdigit() is true only for a real count: it rejects "", "-" and NaN.
             if str(row.get(f"{prefix}.{rank}")).strip().isdigit():
                 return rank
@@ -41,7 +41,7 @@ def filter_by_occurrence(df, source):
     """Keep rows with occurrence support and trim them to that rank.
 
     Args:
-        df: Table with taxonomy columns plus ``IP.<rank>`` / ``BOLD.<rank>``.
+        df: Table with taxonomy columns plus ``GBIF.<rank>`` / ``BOLD.<rank>``.
         source: ``"ncbi"`` renames ``Taxonomy.<rank>`` headers first;
             ``"bold"`` expects canonical level names already.
 
