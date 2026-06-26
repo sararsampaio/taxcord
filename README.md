@@ -27,11 +27,11 @@ flowchart LR
     C2 -->|occurrences| D2[+ GBIF/BOLD counts]
     D2 -->|filter| E2[BOLD supported lineages]
 
-    E --> J(( ))
-    E2 --> J(( ))
+    E --- J(( ))
+    E2 --- J(( ))
     J -->|merge| F[Consensus]
 
-    style J fill:none,stroke:none,width:0px,height:0px
+    style J fill:none,stroke:none
 ```
 
 You run `occurrences` and `filter` **twice** — once per branch, on separate
