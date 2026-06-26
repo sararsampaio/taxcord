@@ -14,15 +14,7 @@ applies to any BLAST-based taxonomic assignment.
 Taxonomy is derived two independent ways — from NCBI (BLAST) and from BOLD
 (BOLDigger). The two branches stay **completely separate**, each running its
 own `occurrences` → `filter` refinement, and only come together at the very
-end in the `merge` command:
-
-```
-NCBI:  BLAST → annotate_taxonomy.R → condense  → occurrences → filter ─┐
-                                                                       ├→ merge
-BOLD:  COI   → boldigger3          → bold-prep  → occurrences → filter ─┘
-```
-
-The same flow as a graph:
+end: a single `merge` command takes both filtered tables and reconciles them.
 
 ```mermaid
 flowchart LR
@@ -35,12 +27,13 @@ flowchart LR
     C2 -->|occurrences| D2[+ GBIF/BOLD counts]
     D2 -->|filter| E2[BOLD supported lineages]
 
-    E -->|merge| F[Consensus]
-    E2 -->|merge| F
+    E --> M[merge]
+    E2 --> M
+    M --> F[Consensus]
 ```
 
 You run `occurrences` and `filter` **twice** — once per branch, on separate
-files — then `merge` reconciles the two.
+files — then a single `merge` reconciles the two.
 
 | Step | Command | What it does |
 |------|---------|--------------|
