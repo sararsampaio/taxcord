@@ -30,6 +30,8 @@ flowchart LR
     E --> J(( ))
     E2 --> J(( ))
     J -->|merge| F[Consensus]
+
+    style J fill:none,stroke:none,width:0px,height:0px
 ```
 
 You run `occurrences` and `filter` **twice** — once per branch, on separate
