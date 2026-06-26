@@ -11,10 +11,16 @@ applies to any BLAST-based taxonomic assignment.
 
 ## Pipeline
 
+Taxonomy is derived two independent ways — from NCBI (BLAST) and from BOLD
+(BOLDigger) — and the two branches are reconciled at the end by `merge`. Each
+branch produces one lineage per OTU, then goes through the same
+`occurrences` → `filter` refinement.
+
 ```mermaid
 flowchart LR
-    A[BLAST hits] -->|annotate_taxonomy| B[Annotated lineages]
-    B -->|condense| C[One lineage per query]
+    A[NCBI BLAST hits] -->|annotate_taxonomy| B[Annotated lineages]
+    B -->|condense| C[One lineage per OTU]
+    A2[BOLDigger results] -->|bold-prep| C
     C -->|occurrences| D[GBIF / BOLD counts]
     D -->|filter| E[Occurrence-supported lineages]
     E -->|merge| F[NCBI + BOLD consensus]
@@ -22,11 +28,17 @@ flowchart LR
 
 | Step | Command | What it does |
 |------|---------|--------------|
-| 1. Annotate | `Rscript scripts/annotate_taxonomy.R` | Adds a full lineage to each BLAST hit using NCBI taxonomy. |
-| 2. Condense | `metatax condense` | Collapses many hits per query into one lineage by rank-wise consensus. |
-| 3. Occurrences | `metatax occurrences` | Annotates lineages with GBIF/BOLD record counts for a region. |
-| 4. Filter | `metatax filter` | Trims each lineage to the finest rank with occurrence support. |
-| 5. Merge | `metatax merge` | Combines NCBI- and BOLD-derived tables into one consensus lineage. |
+| Annotate (NCBI) | `Rscript scripts/annotate_taxonomy.R` | Adds a full lineage to each BLAST hit using NCBI taxonomy. |
+| Condense (NCBI) | `metatax condense` | Collapses many BLAST hits per OTU into one lineage by rank-wise consensus. |
+| Prep (BOLD) | `metatax bold-prep` | Reshapes a BOLDigger result table into the same one-lineage-per-OTU format. |
+| Occurrences | `metatax occurrences` | Annotates lineages with GBIF/BOLD record counts for a region. |
+| Filter | `metatax filter` | Trims each lineage to the finest rank with occurrence support. |
+| Merge | `metatax merge` | Combines the NCBI and BOLD branches into one consensus lineage. |
+
+`condense` and `bold-prep` are the two branches' entry points — `condense`
+collapses NCBI's many BLAST hits per OTU, while BOLDigger already returns one
+identification per OTU, so `bold-prep` only reshapes it. After either, run
+`occurrences` and `filter` on each branch, then `merge` the two.
 
 ## Install
 
@@ -112,6 +124,25 @@ Options:
 - `--qcovs-min FLOAT` — minimum query coverage for a hit to count (default
   `91`).
 
+### 2b. (BOLD branch) Prepare a BOLDigger result table
+
+Use this **instead of** `condense` for the BOLD side. BOLDigger already returns
+one identification per OTU, so there is nothing to collapse — this just
+reshapes its result table into the same format `occurrences` reads.
+
+```bash
+metatax bold-prep data/taxonomy/BOLDResults.xlsx data/taxonomy/bold_condensed.txt
+```
+
+It keeps the `id` and `Phylum`…`Species` columns (dropping BOLDigger's extra
+columns such as `pct_identity`, `status`, `records`), normalises BOLDigger's
+`no-match` sentinel and blank sub-rank cells to `NA`, and checks there is one
+row per OTU. The input may be `.xlsx`, `.csv` or `.tsv`. The OTU `id`s must
+match those of the NCBI branch so the two line up at `merge`.
+
+The result feeds straight into `occurrences` and `filter`, exactly like the
+condensed NCBI table.
+
 ### 3. Annotate with GBIF/BOLD occurrence counts
 
 ```bash
@@ -168,17 +199,18 @@ end reports how many rows failed and the per-service failure counts.
 ### 4. Filter to occurrence-supported ranks
 
 ```bash
-metatax filter data/taxonomy/sample_ip.txt data/taxonomy/sample_ncbi.csv --source ncbi
+metatax filter data/taxonomy/sample_ip.txt data/taxonomy/sample_ncbi.csv
 ```
 
 Keeps only lineages backed by at least one occurrence record (in either source)
-and trims each lineage to the finest rank with support.
+and trims each lineage to the finest rank with support. Rank columns are
+detected automatically, in any case and with or without a `Taxonomy.` prefix.
 
 Options:
 
-- `--source {ncbi,bold}` (**required**) — the header style of the input table:
-  `ncbi` first renames `Taxonomy.<rank>` columns to canonical level names;
-  `bold` expects canonical level names already.
+- `--source {ncbi,bold}` (optional) — a label for where the input came from. It
+  does **not** change the result, so you can usually omit it; it is kept only
+  for convenience when scripting both branches.
 
 ### 5. Merge NCBI and BOLD tables into a consensus
 
@@ -192,7 +224,7 @@ conflicts are cleared, and a gap at any rank clears the ranks below it.
 ## Repository layout
 
 ```
-src/metatax/        # Python package (condense, occurrences, filter, merge, CLI)
+src/metatax/        # Python package (condense, bold-prep, occurrences, filter, merge, CLI)
 scripts/            # standalone runners: annotate_taxonomy.R, run_condense.sh
 tests/              # pytest suite and synthetic fixtures
 data/               # your local data (git-ignored)

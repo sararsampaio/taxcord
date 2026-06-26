@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import argparse
 
-from . import condense, filter_occurrence, merge, occurrences
+from . import bold_prep, condense, filter_occurrence, merge, occurrences
 
 COMMANDS = {
     "condense": (condense, "collapse BLAST hits into one lineage per query"),
+    "bold-prep": (bold_prep, "reshape a BOLDigger table into a condensed lineage file"),
     "occurrences": (occurrences, "annotate lineages with GBIF/BOLD record counts"),
     "filter": (filter_occurrence, "trim lineages to the occurrence-supported rank"),
     "merge": (merge, "merge NCBI and BOLD tables into a consensus lineage"),

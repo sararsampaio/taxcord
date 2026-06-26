@@ -15,16 +15,26 @@ TAX_LEVELS = ["Phylum", "Class", "Order", "Family", "Genus", "Species"]
 # Ranks carrying occurrence counts, finest first.
 OCCURRENCE_RANKS = ["species", "genus", "family", "order"]
 
-# Maps the NCBI condensed-file headers onto the canonical level names.
-NCBI_RENAME = {
-    "Taxonomy.kingdom": "Kingdom",
-    "Taxonomy.phylum": "Phylum",
-    "Taxonomy.class": "Class",
-    "Taxonomy.order": "Order",
-    "Taxonomy.family": "Family",
-    "Taxonomy.genus": "Genus",
-    "Taxonomy.species": "Species",
-}
+# Canonical capitalised name for each taxonomic level we might receive, keyed by
+# lower case. Upstream steps (condense/occurrences) emit lower-case ranks
+# (``phylum``); raw NCBI annotation prefixes them with ``Taxonomy.``; a BOLD
+# table may already be canonical (``Phylum``). All three are accepted.
+_CANONICAL_LEVELS = {name.lower(): name for name in ["Kingdom", *TAX_LEVELS]}
+
+
+def _rank_renames(columns):
+    """Map each taxonomy column to its canonical name.
+
+    Handles any letter case and an optional ``Taxonomy.`` prefix; leaves
+    non-rank columns (``id``, ``GBIF.*``, ``BOLD.*``) untouched.
+    """
+    renames = {}
+    for col in columns:
+        base = col.split(".", 1)[1] if col.startswith("Taxonomy.") else col
+        canonical = _CANONICAL_LEVELS.get(base.lower())
+        if canonical and canonical != col:
+            renames[col] = canonical
+    return renames
 
 
 def _supported_rank(row):
@@ -42,15 +52,15 @@ def filter_by_occurrence(df, source):
 
     Args:
         df: Table with taxonomy columns plus ``GBIF.<rank>`` / ``BOLD.<rank>``.
-        source: ``"ncbi"`` renames ``Taxonomy.<rank>`` headers first;
-            ``"bold"`` expects canonical level names already.
+            Rank columns are accepted in any case and with or without a
+            ``Taxonomy.`` prefix.
+        source: kept as a label for the input's origin (``"ncbi"``/``"bold"``);
+            column names are normalised the same way regardless.
 
     Returns:
         DataFrame with ``id`` and the six taxonomy levels, trimmed per row.
     """
-    if source == "ncbi":
-        df = df.rename(columns=NCBI_RENAME)
-    df = df.copy()
+    df = df.rename(columns=_rank_renames(df.columns)).copy()
 
     lowest = df.apply(_supported_rank, axis=1)
     supported = lowest.notna()
@@ -72,8 +82,9 @@ def configure(parser):
     parser.add_argument(
         "--source",
         choices=("ncbi", "bold"),
-        required=True,
-        help="header style of the input table",
+        default=None,
+        help="optional label for the input's origin; does not change the "
+        "result (rank columns are detected automatically)",
     )
 
 
