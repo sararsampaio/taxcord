@@ -12,19 +12,35 @@ applies to any BLAST-based taxonomic assignment.
 ## Pipeline
 
 Taxonomy is derived two independent ways — from NCBI (BLAST) and from BOLD
-(BOLDigger) — and the two branches are reconciled at the end by `merge`. Each
-branch produces one lineage per OTU, then goes through the same
-`occurrences` → `filter` refinement.
+(BOLDigger). The two branches stay **completely separate**, each running its
+own `occurrences` → `filter` refinement, and only come together at the very
+end in the `merge` command:
+
+```
+NCBI:  BLAST → annotate_taxonomy.R → condense  → occurrences → filter ─┐
+                                                                       ├→ merge
+BOLD:  COI   → boldigger3          → bold-prep  → occurrences → filter ─┘
+```
+
+The same flow as a graph:
 
 ```mermaid
 flowchart LR
     A[NCBI BLAST hits] -->|annotate_taxonomy| B[Annotated lineages]
-    B -->|condense| C[One lineage per OTU]
-    A2[BOLDigger results] -->|bold-prep| C
-    C -->|occurrences| D[GBIF / BOLD counts]
-    D -->|filter| E[Occurrence-supported lineages]
-    E -->|merge| F[NCBI + BOLD consensus]
+    B -->|condense| C[NCBI: one lineage per OTU]
+    C -->|occurrences| D[+ GBIF/BOLD counts]
+    D -->|filter| E[NCBI supported lineages]
+
+    A2[BOLDigger results] -->|bold-prep| C2[BOLD: one lineage per OTU]
+    C2 -->|occurrences| D2[+ GBIF/BOLD counts]
+    D2 -->|filter| E2[BOLD supported lineages]
+
+    E -->|merge| F[Consensus]
+    E2 -->|merge| F
 ```
+
+You run `occurrences` and `filter` **twice** — once per branch, on separate
+files — then `merge` reconciles the two.
 
 | Step | Command | What it does |
 |------|---------|--------------|
