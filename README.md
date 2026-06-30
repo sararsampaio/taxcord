@@ -232,6 +232,20 @@ metatax merge data/taxonomy/sample_ncbi.csv data/taxonomy/sample_bold.csv data/t
 Reconciles the two independently derived tables: ranks they agree on are kept,
 conflicts are cleared, and a gap at any rank clears the ranks below it.
 
+Options:
+
+- `--gbif-backbone` — when the sources agree on a finer rank (e.g. species) but
+  disagree on a coarser one (e.g. family), the plain rule would clear the family
+  and cascade down, discarding the agreed species. With this flag the agreed
+  taxon is resolved against GBIF's name backbone and **only the conflicted
+  coarser rank is filled from GBIF's accepted classification** — the agreed
+  genus/species are kept. If GBIF cannot resolve it, the conflicted rank is left
+  blank but the agreed species is still kept. Needs network access.
+
+  ```bash
+  metatax merge ncbi.csv bold.csv consensus.csv --gbif-backbone
+  ```
+
 ## Repository layout
 
 ```

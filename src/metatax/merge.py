@@ -3,14 +3,31 @@
 The two sources are joined on query id. At each rank the call is the value
 they agree on; a disagreement clears that rank. Once a rank is empty the lower
 ranks are cleared too, so a lineage never claims more detail than it supports.
+
+That rule alone discards good calls: when the sources agree on the genus or
+species but place it in differently-named families (synonyms or different
+classifications), the family conflict cascades down and erases the agreed
+species. With ``--gbif-backbone`` such a row is reconciled instead — the agreed
+taxon is resolved against GBIF's name backbone, the agreed ranks are kept, and
+only the unresolved coarser rank(s) are filled from GBIF's accepted
+classification, so the species is kept.
 """
 
 from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import requests
 
 LEVELS = ["Phylum", "Class", "Order", "Family", "Genus", "Species"]
+
+GBIF_MATCH_URL = "https://api.gbif.org/v1/species/match"
+REQUEST_TIMEOUT = 30
+HEADERS = {"User-Agent": "metatax/1.0 (taxonomy merge backbone)"}
+
+# Map each level to the GBIF match response field and rank parameter.
+_GBIF_FIELD = {level: level.lower() for level in LEVELS}
+_GBIF_RANK = {level: level.upper() for level in LEVELS}
 
 
 def _consensus(ncbi_value, bold_value):
@@ -25,42 +42,126 @@ def _consensus(ncbi_value, bold_value):
     return np.nan
 
 
-def _propagate_gaps(row):
-    """Clear every rank below the first empty one."""
+def _gbif_classification(session, name, level):
+    """Return GBIF's accepted classification for ``name`` at ``level``, or None.
+
+    None means the name could not be resolved at that rank, so the caller
+    should fall back rather than trust an empty lineage.
+    """
+    try:
+        response = session.get(
+            GBIF_MATCH_URL,
+            params={"name": name, "rank": _GBIF_RANK[level]},
+            timeout=REQUEST_TIMEOUT,
+        )
+        data = response.json()
+    except (requests.RequestException, ValueError):
+        return None
+    if data.get("matchType") in (None, "NONE") or not data.get("usageKey"):
+        return None
+    classification = {lvl: data.get(field) for lvl, field in _GBIF_FIELD.items()}
+    # The queried rank must come back populated, else the anchor would vanish.
+    if not classification.get(level):
+        return None
+    return classification
+
+
+def gbif_resolver(session):
+    """Build a memoised resolver: (name, level) -> accepted classification/None."""
+    cache = {}
+
+    def resolve(name, level):
+        key = (level, name)
+        if key not in cache:
+            cache[key] = _gbif_classification(session, name, level)
+        return cache[key]
+
+    return resolve
+
+
+def _reconcile_row(row, resolver):
+    """Build the consensus lineage for one joined row.
+
+    Without ``resolver`` (or when a row needs no reconciliation) this is the
+    plain rank-wise consensus with downward gap propagation. When the sources
+    agree at a finer rank but a coarser rank is unresolved, and a resolver is
+    given, the higher lineage is rebuilt from GBIF's backbone for the agreed
+    taxon; if GBIF cannot resolve it, the agreed ranks are kept and the
+    unresolved coarser rank is left blank rather than cascading downward.
+    """
+    out = {"id": row["id"]}
+    pairs = {lvl: (row.get(f"{lvl}_ncbi"), row.get(f"{lvl}_bold")) for lvl in LEVELS}
+    base = {lvl: _consensus(n, b) for lvl, (n, b) in pairs.items()}
+    agreed = {
+        lvl for lvl, (n, b) in pairs.items() if pd.notna(n) and pd.notna(b) and n == b
+    }
+    anchor_idx = max((LEVELS.index(lvl) for lvl in agreed), default=None)
+    coarser_gap = anchor_idx is not None and any(
+        pd.isna(base[LEVELS[i]]) for i in range(anchor_idx)
+    )
+
+    if resolver is not None and coarser_gap:
+        anchor = LEVELS[anchor_idx]
+        backbone = resolver(pairs[anchor][0], anchor)
+        for i, lvl in enumerate(LEVELS):
+            if i > anchor_idx:
+                # Finer than the agreed anchor: not jointly supported.
+                out[lvl] = np.nan
+            elif pd.notna(base[lvl]):
+                # Keep what the sources agree on (or a lone source value).
+                out[lvl] = base[lvl]
+            elif backbone:
+                # Fill only the unresolved coarser rank from GBIF's backbone.
+                out[lvl] = backbone.get(lvl)
+            else:
+                # GBIF could not resolve it: leave the conflicted rank blank
+                # rather than cascading down and losing the agreed anchor.
+                out[lvl] = np.nan
+        return out
+
     cleared = False
-    for level in LEVELS:
-        if pd.isna(row[level]):
+    for lvl in LEVELS:
+        if pd.isna(base[lvl]):
             cleared = True
-        if cleared:
-            row[level] = np.nan
-    return row
+        out[lvl] = np.nan if cleared else base[lvl]
+    return out
 
 
-def merge_taxonomy(ncbi_df, bold_df):
-    """Merge two condensed taxonomy tables into one consensus table."""
+def merge_taxonomy(ncbi_df, bold_df, resolver=None):
+    """Merge two condensed taxonomy tables into one consensus table.
+
+    Pass ``resolver`` (see :func:`gbif_resolver`) to reconcile finer-rank
+    agreements that a coarser-rank conflict would otherwise discard.
+    """
     merged = pd.merge(
         ncbi_df, bold_df, on="id", how="outer", suffixes=("_ncbi", "_bold")
     )
-    for level in LEVELS:
-        merged[level] = [
-            _consensus(ncbi_value, bold_value)
-            for ncbi_value, bold_value in zip(
-                merged[f"{level}_ncbi"], merged[f"{level}_bold"]
-            )
-        ]
-    merged = merged.apply(_propagate_gaps, axis=1)
-    return merged[["id", *LEVELS]]
+    records = [_reconcile_row(row, resolver) for _, row in merged.iterrows()]
+    return pd.DataFrame(records, columns=["id", *LEVELS])
 
 
 def configure(parser):
     parser.add_argument("ncbi", help="NCBI condensed taxonomy CSV")
     parser.add_argument("bold", help="BOLD condensed taxonomy CSV")
     parser.add_argument("output", help="output CSV path")
+    parser.add_argument(
+        "--gbif-backbone",
+        action="store_true",
+        help="when the sources agree at a finer rank but conflict at a coarser "
+        "one, resolve the agreed taxon via GBIF and fill the higher lineage "
+        "from GBIF's accepted classification instead of discarding it (needs "
+        "network access)",
+    )
 
 
 def execute(args):
     ncbi_df = pd.read_csv(args.ncbi)
     bold_df = pd.read_csv(args.bold)
-    result = merge_taxonomy(ncbi_df, bold_df)
+    resolver = None
+    if args.gbif_backbone:
+        session = requests.Session()
+        session.headers.update(HEADERS)
+        resolver = gbif_resolver(session)
+    result = merge_taxonomy(ncbi_df, bold_df, resolver)
     result.to_csv(args.output, index=False)
     print(f"Merged {len(result)} queries -> {args.output}")

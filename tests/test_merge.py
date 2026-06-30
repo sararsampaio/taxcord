@@ -52,3 +52,95 @@ def test_single_source_value_is_used():
     result = merge_taxonomy(ncbi, bold).set_index("id")
 
     assert result.loc["OTU_C", "Species"] == "Mockia gamma"
+
+
+# A backbone for the OTU8-style case: sources agree on the species but disagree
+# on family; GBIF places the species in Helotiaceae.
+_BACKBONE = {
+    "Articulospora tetracladia": {
+        "Phylum": "Ascomycota",
+        "Class": "Leotiomycetes",
+        "Order": "Helotiales",
+        "Family": "Helotiaceae",
+        "Genus": "Articulospora",
+        "Species": "Articulospora tetracladia",
+    }
+}
+
+
+def _fake_resolver(name, level):
+    return _BACKBONE.get(name)
+
+
+def test_family_conflict_loses_species_without_backbone():
+    # Same species, different family -> family conflict cascades and clears species.
+    ncbi = _frame(
+        "OTU8",
+        [
+            "Ascomycota",
+            "Leotiomycetes",
+            "Helotiales",
+            "Discinellaceae",
+            "Articulospora",
+            "Articulospora tetracladia",
+        ],
+    )
+    bold = _frame(
+        "OTU8",
+        [
+            "Ascomycota",
+            "Leotiomycetes",
+            "Helotiales",
+            "Helotiaceae",
+            "Articulospora",
+            "Articulospora tetracladia",
+        ],
+    )
+    result = merge_taxonomy(ncbi, bold).set_index("id")
+    assert pd.isna(result.loc["OTU8", "Family"])
+    assert pd.isna(result.loc["OTU8", "Species"])
+
+
+def test_gbif_backbone_keeps_species_and_fills_family():
+    ncbi = _frame(
+        "OTU8",
+        [
+            "Ascomycota",
+            "Leotiomycetes",
+            "Helotiales",
+            "Discinellaceae",
+            "Articulospora",
+            "Articulospora tetracladia",
+        ],
+    )
+    bold = _frame(
+        "OTU8",
+        [
+            "Ascomycota",
+            "Leotiomycetes",
+            "Helotiales",
+            "Helotiaceae",
+            "Articulospora",
+            "Articulospora tetracladia",
+        ],
+    )
+    result = merge_taxonomy(ncbi, bold, resolver=_fake_resolver).set_index("id")
+    assert result.loc["OTU8", "Species"] == "Articulospora tetracladia"
+    assert result.loc["OTU8", "Family"] == "Helotiaceae"  # from GBIF backbone
+
+
+def test_backbone_fallback_keeps_species_blank_family_when_unresolved():
+    ncbi = _frame(
+        "OTU9",
+        ["Ascomycota", "Leotiomycetes", "Helotiales", "Famone", "Genusx", "Genusx sp"],
+    )
+    bold = _frame(
+        "OTU9",
+        ["Ascomycota", "Leotiomycetes", "Helotiales", "Famtwo", "Genusx", "Genusx sp"],
+    )
+    # resolver returns None (GBIF cannot resolve) -> graceful fallback
+    result = merge_taxonomy(ncbi, bold, resolver=lambda name, level: None).set_index(
+        "id"
+    )
+    assert result.loc["OTU9", "Species"] == "Genusx sp"  # kept
+    assert pd.isna(result.loc["OTU9", "Family"])  # conflicted family left blank
