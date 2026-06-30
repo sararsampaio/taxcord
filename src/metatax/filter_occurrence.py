@@ -47,15 +47,13 @@ def _supported_rank(row):
     return None
 
 
-def filter_by_occurrence(df, source):
+def filter_by_occurrence(df):
     """Keep rows with occurrence support and trim them to that rank.
 
     Args:
         df: Table with taxonomy columns plus ``GBIF.<rank>`` / ``BOLD.<rank>``.
             Rank columns are accepted in any case and with or without a
-            ``Taxonomy.`` prefix.
-        source: kept as a label for the input's origin (``"ncbi"``/``"bold"``);
-            column names are normalised the same way regardless.
+            ``Taxonomy.`` prefix, regardless of which source produced them.
 
     Returns:
         DataFrame with ``id`` and the six taxonomy levels, trimmed per row.
@@ -79,17 +77,10 @@ def filter_by_occurrence(df, source):
 def configure(parser):
     parser.add_argument("input", help="tab-delimited table with occurrence counts")
     parser.add_argument("output", help="output CSV path")
-    parser.add_argument(
-        "--source",
-        choices=("ncbi", "bold"),
-        default=None,
-        help="optional label for the input's origin; does not change the "
-        "result (rank columns are detected automatically)",
-    )
 
 
 def execute(args):
     df = pd.read_csv(args.input, sep="\t")
-    result = filter_by_occurrence(df, args.source)
+    result = filter_by_occurrence(df)
     result.to_csv(args.output, index=False)
     print(f"Kept {len(result)} supported queries -> {args.output}")

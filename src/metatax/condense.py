@@ -195,6 +195,39 @@ def write_assignments(otus, ranks, out_path, tiers=DEFAULT_TIERS):
             )
 
 
+def _parse_tier(spec):
+    """Parse a ``rank:trigger[:floor]`` tier spec; floor defaults to trigger."""
+    parts = spec.split(":")
+    if len(parts) not in (2, 3):
+        raise SystemExit(
+            f"metatax condense: --tier expects RANK:TRIGGER[:FLOOR], got {spec!r}"
+        )
+    rank = parts[0].strip().lower()
+    if not rank:
+        raise SystemExit(f"metatax condense: --tier is missing a rank: {spec!r}")
+    try:
+        trigger = float(parts[1])
+        floor = float(parts[2]) if len(parts) == 3 else trigger
+    except ValueError:
+        raise SystemExit(
+            f"metatax condense: --tier thresholds must be numbers: {spec!r}"
+        )
+    return Tier(trigger=trigger, floor=floor, rank=rank)
+
+
+def _resolve_tiers(specs):
+    """Apply ``--tier`` overrides onto the defaults, keyed by rank.
+
+    Ranks the user does not mention keep their default thresholds. The result
+    is ordered by trigger, highest first, as :func:`select_tier` expects.
+    """
+    tiers = {tier.rank: tier for tier in DEFAULT_TIERS}
+    for spec in specs or []:
+        tier = _parse_tier(spec)
+        tiers[tier.rank] = tier
+    return sorted(tiers.values(), key=lambda tier: tier.trigger, reverse=True)
+
+
 def configure(parser):
     parser.add_argument("input", help="pipe-delimited annotated BLAST file")
     parser.add_argument("output", help="tab-delimited condensed taxonomy file")
@@ -204,9 +237,23 @@ def configure(parser):
         default=DEFAULT_QCOVS_MIN,
         help="minimum query coverage to keep a hit (default: %(default)s)",
     )
+    parser.add_argument(
+        "--tier",
+        dest="tiers",
+        action="append",
+        metavar="RANK:TRIGGER[:FLOOR]",
+        help=(
+            "override an identity tier: when the best hit's percent identity is "
+            "at least TRIGGER, resolve down to RANK, letting hits at or above "
+            "FLOOR (default = TRIGGER) vote. Repeatable; ranks left unset keep "
+            "the defaults species:99:97, genus:97:97, family:90:90, "
+            "order:85:85, class:0:0."
+        ),
+    )
 
 
 def execute(args):
+    tiers = _resolve_tiers(args.tiers)
     otus, ranks = read_blast_hits(args.input, args.qcovs_min)
-    write_assignments(otus, ranks, args.output)
+    write_assignments(otus, ranks, args.output, tiers=tiers)
     print(f"Condensed {len(otus)} queries -> {args.output}")

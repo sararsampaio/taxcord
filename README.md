@@ -12,9 +12,12 @@ applies to any BLAST-based taxonomic assignment.
 ## Pipeline
 
 Taxonomy is derived two independent ways — from NCBI (BLAST) and from BOLD
-(BOLDigger). The two branches stay **completely separate**, each running its
-own `occurrences` → `filter` refinement, and only come together at the very
-end: a single `merge` command takes both filtered tables and reconciles them.
+([BOLDigger3](https://github.com/DominikBuchner/BOLDigger3)). The two branches
+stay **completely separate**, each running its own `occurrences` → `filter`
+refinement, and only come together at the very end: a single `merge` command
+takes both filtered tables and reconciles them. BOLDigger3 already returns one
+identification per OTU, so `bold-prep` only reshapes its result table into the
+input `occurrences` expects.
 
 ```mermaid
 flowchart LR
@@ -23,7 +26,7 @@ flowchart LR
     C -->|occurrences| D[+ GBIF/BOLD counts]
     D -->|filter| E[NCBI supported lineages]
 
-    A2[BOLDigger results] -->|bold-prep| C2[BOLD: one lineage per OTU]
+    A2[BOLDigger3 results] -->|bold-prep| C2[BOLD lineage table]
     C2 -->|occurrences| D2[+ GBIF/BOLD counts]
     D2 -->|filter| E2[BOLD supported lineages]
 
@@ -41,7 +44,7 @@ files — then a single `merge` reconciles the two.
 |------|---------|--------------|
 | Annotate (NCBI) | `Rscript scripts/annotate_taxonomy.R` | Adds a full lineage to each BLAST hit using NCBI taxonomy. |
 | Condense (NCBI) | `metatax condense` | Collapses many BLAST hits per OTU into one lineage by rank-wise consensus. |
-| Prep (BOLD) | `metatax bold-prep` | Reshapes a BOLDigger result table into the same one-lineage-per-OTU format. |
+| Prep (BOLD) | `metatax bold-prep` | Reshapes a BOLDigger3 result table into the lineage table `occurrences` reads. |
 | Occurrences | `metatax occurrences` | Annotates lineages with GBIF/BOLD record counts for a region. |
 | Filter | `metatax filter` | Trims each lineage to the finest rank with occurrence support. |
 | Merge | `metatax merge` | Combines the NCBI and BOLD branches into one consensus lineage. |
@@ -134,19 +137,32 @@ Options:
 
 - `--qcovs-min FLOAT` — minimum query coverage for a hit to count (default
   `91`).
+- `--tier RANK:TRIGGER[:FLOOR]` — override the identity bands above. When the
+  best hit's identity is at least `TRIGGER`, the query is resolved down to
+  `RANK`, letting hits at or above `FLOOR` (default = `TRIGGER`) vote.
+  Repeatable; ranks you don't mention keep their defaults
+  (`species:99:97`, `genus:97:97`, `family:90:90`, `order:85:85`,
+  `class:0:0`). For example, to require 98 % for a species call and 96 % for
+  genus:
 
-### 2b. (BOLD branch) Prepare a BOLDigger result table
+  ```bash
+  metatax condense in.txt out.txt --tier species:98:97 --tier genus:96
+  ```
 
-Use this **instead of** `condense` for the BOLD side. BOLDigger already returns
-one identification per OTU, so there is nothing to collapse — this just
-reshapes its result table into the same format `occurrences` reads.
+### 2b. (BOLD branch) Prepare a BOLDigger3 result table
+
+Use this **instead of** `condense` for the BOLD side. Identify your COI (or
+other marker) sequences with
+[BOLDigger3](https://github.com/DominikBuchner/BOLDigger3) first; it already
+returns one identification per OTU, so there is nothing to collapse — this just
+reshapes its result table into the format `occurrences` reads.
 
 ```bash
 metatax bold-prep data/taxonomy/BOLDResults.xlsx data/taxonomy/bold_condensed.txt
 ```
 
-It keeps the `id` and `Phylum`…`Species` columns (dropping BOLDigger's extra
-columns such as `pct_identity`, `status`, `records`), normalises BOLDigger's
+It keeps the `id` and `Phylum`…`Species` columns (dropping BOLDigger3's extra
+columns such as `pct_identity`, `status`, `records`), normalises BOLDigger3's
 `no-match` sentinel and blank sub-rank cells to `NA`, and checks there is one
 row per OTU. The input may be `.xlsx`, `.csv` or `.tsv`. The OTU `id`s must
 match those of the NCBI branch so the two line up at `merge`.
@@ -214,14 +230,9 @@ metatax filter data/taxonomy/sample_ip.txt data/taxonomy/sample_ncbi.csv
 ```
 
 Keeps only lineages backed by at least one occurrence record (in either source)
-and trims each lineage to the finest rank with support. Rank columns are
-detected automatically, in any case and with or without a `Taxonomy.` prefix.
-
-Options:
-
-- `--source {ncbi,bold}` (optional) — a label for where the input came from. It
-  does **not** change the result, so you can usually omit it; it is kept only
-  for convenience when scripting both branches.
+and trims each lineage to the finest rank with support. It works for both
+branches unchanged: rank columns are detected automatically, in any case and
+with or without a `Taxonomy.` prefix.
 
 ### 5. Merge NCBI and BOLD tables into a consensus
 

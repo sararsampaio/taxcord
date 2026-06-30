@@ -1,8 +1,12 @@
 from pathlib import Path
 
+import pytest
+
 from metatax.condense import (
     DEFAULT_RANKS,
+    DEFAULT_TIERS,
     Hit,
+    _resolve_tiers,
     assign_lineage,
     read_blast_hits,
     write_assignments,
@@ -76,3 +80,35 @@ def test_write_assignments_round_trip(tmp_path):
     assert rows["OTU_A"][-1] == "Mockia alpha"
     assert rows["OTU_B"][ranks.index("genus") + 1] == "Mockia"
     assert rows["OTU_B"][-1] == "NA"
+
+
+def test_resolve_tiers_defaults_when_no_override():
+    assert _resolve_tiers(None) == DEFAULT_TIERS
+    assert _resolve_tiers([]) == DEFAULT_TIERS
+
+
+def test_resolve_tiers_overrides_only_named_rank():
+    tiers = _resolve_tiers(["species:98:95"])
+    by_rank = {tier.rank: tier for tier in tiers}
+    # the overridden rank takes the new thresholds...
+    assert by_rank["species"].trigger == 98
+    assert by_rank["species"].floor == 95
+    # ...while the others keep their defaults
+    assert by_rank["family"].trigger == 90
+    # result stays ordered by trigger, highest first
+    assert [tier.trigger for tier in tiers] == sorted(
+        (tier.trigger for tier in tiers), reverse=True
+    )
+
+
+def test_resolve_tiers_floor_defaults_to_trigger():
+    (tier,) = [t for t in _resolve_tiers(["genus:96"]) if t.rank == "genus"]
+    assert tier.trigger == 96
+    assert tier.floor == 96
+
+
+def test_resolve_tiers_rejects_bad_spec():
+    with pytest.raises(SystemExit):
+        _resolve_tiers(["species"])
+    with pytest.raises(SystemExit):
+        _resolve_tiers(["species:abc"])

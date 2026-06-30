@@ -23,7 +23,7 @@ def test_bold_source_trims_to_supported_rank():
             "BOLD.order": ["-", "-"],
         }
     )
-    result = filter_by_occurrence(df, source="bold").set_index("id")
+    result = filter_by_occurrence(df).set_index("id")
 
     # OTU_A is supported to species; OTU_B only to family, so finer ranks clear.
     assert result.loc["OTU_A", "Species"] == "Mockia alpha"
@@ -52,7 +52,7 @@ def test_unsupported_rows_are_dropped():
             "BOLD.order": ["-"],
         }
     )
-    assert filter_by_occurrence(df, source="bold").empty
+    assert filter_by_occurrence(df).empty
 
 
 def test_ncbi_source_renames_headers():
@@ -76,7 +76,7 @@ def test_ncbi_source_renames_headers():
             "BOLD.order": ["-"],
         }
     )
-    result = filter_by_occurrence(df, source="ncbi")
+    result = filter_by_occurrence(df)
     assert list(result.columns) == [
         "id",
         "Phylum",
