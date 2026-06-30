@@ -229,22 +229,46 @@ Options:
 metatax merge data/taxonomy/sample_ncbi.csv data/taxonomy/sample_bold.csv data/taxonomy/consensus.csv
 ```
 
-Reconciles the two independently derived tables: ranks they agree on are kept,
-conflicts are cleared, and a gap at any rank clears the ranks below it.
+Joins the two independently derived tables on `id` and decides each rank
+(Phylum → Species) by comparing the NCBI and BOLD values:
 
-Options:
+- **Both agree** → keep that value.
+- **They conflict** → clear that rank (trust neither).
+- **Only one source has a value** → keep it.
+- **A rank is empty** → every rank below it is cleared too, so a lineage never
+  claims more detail than it supports.
 
-- `--gbif-backbone` — when the sources agree on a finer rank (e.g. species) but
-  disagree on a coarser one (e.g. family), the plain rule would clear the family
-  and cascade down, discarding the agreed species. With this flag the agreed
-  taxon is resolved against GBIF's name backbone and **only the conflicted
-  coarser rank is filled from GBIF's accepted classification** — the agreed
-  genus/species are kept. If GBIF cannot resolve it, the conflicted rank is left
-  blank but the agreed species is still kept. Needs network access.
+The output is one row per OTU with `id` and the six taxonomy levels.
 
-  ```bash
-  metatax merge ncbi.csv bold.csv consensus.csv --gbif-backbone
-  ```
+That last rule has a cost: if NCBI and BOLD agree on the *species* but place it
+in differently-named *families* (taxonomic synonyms or different classification
+systems), the family conflict clears the family and cascades down, throwing away
+the species both sources agreed on.
+
+#### `--gbif-backbone` (optional, needs network)
+
+```bash
+metatax merge ncbi.csv bold.csv consensus.csv --gbif-backbone
+```
+
+Fixes that case. When the sources agree at a finer rank but disagree at a
+coarser one, the agreed taxon (e.g. the species) is resolved against
+[GBIF](https://www.gbif.org/)'s name backbone and **only the conflicted coarser
+rank is filled from GBIF's accepted classification** — the agreed genus/species
+are kept exactly as the sources had them. If GBIF cannot resolve the taxon, that
+rank is left blank but the agreed species is still kept (it is never discarded).
+GBIF is queried only for rows that actually need it, and each unique taxon once.
+
+It also writes a **reconciliation report** next to the output
+(`<output>.reconciliation.tsv`) recording every rank it filled, so the
+adjustments are auditable:
+
+| id | conflicted_rank | ncbi | bold | gbif_filled | resolved_from | status |
+|----|-----------------|------|------|-------------|---------------|--------|
+| OTU8 | Family | Discinellaceae | Helotiaceae | Helotiaceae | Species=Articulospora tetracladia | filled |
+
+`status` is `filled` when GBIF supplied a value, or `unresolved` when it could
+not (the rank was left blank).
 
 ## Repository layout
 

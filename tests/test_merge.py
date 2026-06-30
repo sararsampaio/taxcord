@@ -144,3 +144,40 @@ def test_backbone_fallback_keeps_species_blank_family_when_unresolved():
     )
     assert result.loc["OTU9", "Species"] == "Genusx sp"  # kept
     assert pd.isna(result.loc["OTU9", "Family"])  # conflicted family left blank
+
+
+def test_report_records_each_reconciled_rank():
+    ncbi = _frame(
+        "OTU8",
+        [
+            "Ascomycota",
+            "Leotiomycetes",
+            "Helotiales",
+            "Discinellaceae",
+            "Articulospora",
+            "Articulospora tetracladia",
+        ],
+    )
+    bold = _frame(
+        "OTU8",
+        [
+            "Ascomycota",
+            "Leotiomycetes",
+            "Helotiales",
+            "Helotiaceae",
+            "Articulospora",
+            "Articulospora tetracladia",
+        ],
+    )
+    report = []
+    merge_taxonomy(ncbi, bold, resolver=_fake_resolver, report=report)
+
+    assert len(report) == 1
+    entry = report[0]
+    assert entry["id"] == "OTU8"
+    assert entry["conflicted_rank"] == "Family"
+    assert entry["ncbi"] == "Discinellaceae"
+    assert entry["bold"] == "Helotiaceae"
+    assert entry["gbif_filled"] == "Helotiaceae"
+    assert entry["status"] == "filled"
+    assert entry["resolved_from"] == "Species=Articulospora tetracladia"

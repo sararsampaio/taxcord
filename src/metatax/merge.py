@@ -15,11 +15,24 @@ classification, so the species is kept.
 
 from __future__ import annotations
 
+import os
+
 import numpy as np
 import pandas as pd
 import requests
 
 LEVELS = ["Phylum", "Class", "Order", "Family", "Genus", "Species"]
+
+# Columns of the reconciliation report written alongside the merged table.
+REPORT_COLUMNS = [
+    "id",
+    "conflicted_rank",
+    "ncbi",
+    "bold",
+    "gbif_filled",
+    "resolved_from",
+    "status",
+]
 
 GBIF_MATCH_URL = "https://api.gbif.org/v1/species/match"
 REQUEST_TIMEOUT = 30
@@ -79,15 +92,16 @@ def gbif_resolver(session):
     return resolve
 
 
-def _reconcile_row(row, resolver):
+def _reconcile_row(row, resolver, report=None):
     """Build the consensus lineage for one joined row.
 
     Without ``resolver`` (or when a row needs no reconciliation) this is the
     plain rank-wise consensus with downward gap propagation. When the sources
     agree at a finer rank but a coarser rank is unresolved, and a resolver is
-    given, the higher lineage is rebuilt from GBIF's backbone for the agreed
-    taxon; if GBIF cannot resolve it, the agreed ranks are kept and the
-    unresolved coarser rank is left blank rather than cascading downward.
+    given, that coarser rank is filled from GBIF's backbone for the agreed
+    taxon while the agreed ranks are kept; if GBIF cannot resolve it, the
+    coarser rank is left blank rather than cascading down and losing the agreed
+    anchor. Each such fill is appended to ``report`` when one is supplied.
     """
     out = {"id": row["id"]}
     pairs = {lvl: (row.get(f"{lvl}_ncbi"), row.get(f"{lvl}_bold")) for lvl in LEVELS}
@@ -102,7 +116,8 @@ def _reconcile_row(row, resolver):
 
     if resolver is not None and coarser_gap:
         anchor = LEVELS[anchor_idx]
-        backbone = resolver(pairs[anchor][0], anchor)
+        anchor_name = pairs[anchor][0]
+        backbone = resolver(anchor_name, anchor)
         for i, lvl in enumerate(LEVELS):
             if i > anchor_idx:
                 # Finer than the agreed anchor: not jointly supported.
@@ -110,13 +125,24 @@ def _reconcile_row(row, resolver):
             elif pd.notna(base[lvl]):
                 # Keep what the sources agree on (or a lone source value).
                 out[lvl] = base[lvl]
-            elif backbone:
-                # Fill only the unresolved coarser rank from GBIF's backbone.
-                out[lvl] = backbone.get(lvl)
             else:
-                # GBIF could not resolve it: leave the conflicted rank blank
-                # rather than cascading down and losing the agreed anchor.
-                out[lvl] = np.nan
+                # Coarser rank the sources did not resolve: fill from GBIF if it
+                # can, else leave blank (never cascade onto the agreed anchor).
+                filled = backbone.get(lvl) if backbone else None
+                out[lvl] = filled if filled is not None else np.nan
+                if report is not None:
+                    ncbi_value, bold_value = pairs[lvl]
+                    report.append(
+                        {
+                            "id": row["id"],
+                            "conflicted_rank": lvl,
+                            "ncbi": "" if pd.isna(ncbi_value) else ncbi_value,
+                            "bold": "" if pd.isna(bold_value) else bold_value,
+                            "gbif_filled": "" if filled is None else filled,
+                            "resolved_from": f"{anchor}={anchor_name}",
+                            "status": "filled" if filled is not None else "unresolved",
+                        }
+                    )
         return out
 
     cleared = False
@@ -127,17 +153,25 @@ def _reconcile_row(row, resolver):
     return out
 
 
-def merge_taxonomy(ncbi_df, bold_df, resolver=None):
+def merge_taxonomy(ncbi_df, bold_df, resolver=None, report=None):
     """Merge two condensed taxonomy tables into one consensus table.
 
     Pass ``resolver`` (see :func:`gbif_resolver`) to reconcile finer-rank
-    agreements that a coarser-rank conflict would otherwise discard.
+    agreements that a coarser-rank conflict would otherwise discard. Pass a
+    list as ``report`` to collect one record per GBIF-filled rank (the columns
+    in :data:`REPORT_COLUMNS`).
     """
     merged = pd.merge(
         ncbi_df, bold_df, on="id", how="outer", suffixes=("_ncbi", "_bold")
     )
-    records = [_reconcile_row(row, resolver) for _, row in merged.iterrows()]
+    records = [_reconcile_row(row, resolver, report) for _, row in merged.iterrows()]
     return pd.DataFrame(records, columns=["id", *LEVELS])
+
+
+def _report_path(output):
+    """Path for the reconciliation report, alongside the merged output."""
+    stem, _ = os.path.splitext(output)
+    return f"{stem}.reconciliation.tsv"
 
 
 def configure(parser):
@@ -158,10 +192,22 @@ def execute(args):
     ncbi_df = pd.read_csv(args.ncbi)
     bold_df = pd.read_csv(args.bold)
     resolver = None
+    report = None
     if args.gbif_backbone:
         session = requests.Session()
         session.headers.update(HEADERS)
         resolver = gbif_resolver(session)
-    result = merge_taxonomy(ncbi_df, bold_df, resolver)
+        report = []
+    result = merge_taxonomy(ncbi_df, bold_df, resolver, report)
     result.to_csv(args.output, index=False)
-    print(f"Merged {len(result)} queries -> {args.output}")
+
+    message = f"Merged {len(result)} queries -> {args.output}"
+    if report:
+        report_path = _report_path(args.output)
+        pd.DataFrame(report, columns=REPORT_COLUMNS).to_csv(
+            report_path, sep="\t", index=False
+        )
+        message += f"; reconciled {len(report)} rank(s) via GBIF -> {report_path}"
+    elif args.gbif_backbone:
+        message += "; no ranks needed GBIF reconciliation"
+    print(message)
