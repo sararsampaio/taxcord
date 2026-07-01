@@ -1,0 +1,6 @@
+id,Phylum,Class,Order,Family,Genus,Species,pct_identity,status,records
+OTU0001,Arthropoda,Insecta,Diptera,Chironomidae,Chironomus,Chironomus riparius,100,public,45
+OTU0002,Arthropoda,Insecta,Ephemeroptera,Baetidae,Baetis,,99.2,public,18
+OTU0003,Arthropoda,Malacostraca,Amphipoda,Gammaridae,Gammarus,Gammarus pulex,99.8,public,27
+OTU0004,Mollusca,Gastropoda,Littorinimorpha,Tateidae,Potamopyrgus,Potamopyrgus antipodarum,100,public,33
+OTU0005,no-match,no-match,no-match,no-match,no-match,no-match,0,,

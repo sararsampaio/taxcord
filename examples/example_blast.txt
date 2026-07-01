@@ -1,0 +1,13 @@
+id|pident|qcovs|Taxonomy.kingdom|Taxonomy.phylum|Taxonomy.class|Taxonomy.order|Taxonomy.family|Taxonomy.genus|Taxonomy.species
+OTU0001|99.6|100|Metazoa|Arthropoda|Insecta|Diptera|Chironomidae|Chironomus|Chironomus riparius
+OTU0001|99.2|100|Metazoa|Arthropoda|Insecta|Diptera|Chironomidae|Chironomus|Chironomus riparius
+OTU0001|99.0|99|Metazoa|Arthropoda|Insecta|Diptera|Chironomidae|Chironomus|Chironomus riparius
+OTU0002|97.9|100|Metazoa|Arthropoda|Insecta|Ephemeroptera|Baetidae|Baetis|Baetis rhodani
+OTU0002|97.6|99|Metazoa|Arthropoda|Insecta|Ephemeroptera|Baetidae|Baetis|Baetis muticus
+OTU0002|97.5|98|Metazoa|Arthropoda|Insecta|Ephemeroptera|Baetidae|Baetis|Baetis rhodani
+OTU0003|88.0|97|Metazoa|Arthropoda|Malacostraca|Amphipoda|Gammaridae|Gammarus|Gammarus pulex
+OTU0003|86.5|96|Metazoa|Arthropoda|Malacostraca|Amphipoda|Gammaridae|Gammarus|Gammarus pulex
+OTU0004|99.4|100|Metazoa|Mollusca|Gastropoda|Littorinimorpha|Hydrobiidae|Potamopyrgus|Potamopyrgus antipodarum
+OTU0004|99.1|100|Metazoa|Mollusca|Gastropoda|Littorinimorpha|Hydrobiidae|Potamopyrgus|Potamopyrgus antipodarum
+OTU0005|82.0|95|Metazoa|Arthropoda|Branchiopoda|Diplostraca|Daphniidae|Daphnia|Daphnia pulex
+OTU0005|81.0|94|Metazoa|Arthropoda|Branchiopoda|Diplostraca|Daphniidae|Daphnia|Daphnia pulex
