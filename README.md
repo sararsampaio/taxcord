@@ -92,6 +92,13 @@ metatax occurrences -h      # options for one sub-command
 The steps are meant to be run in order, each consuming the previous step's
 output (see the [pipeline](#pipeline) above).
 
+## Try it on the example data
+
+No data of your own handy? The [`examples/`](examples/) folder ships a small
+**synthetic** dataset (public taxa, made-up OTU IDs) that runs the whole
+pipeline — see [`examples/README.md`](examples/README.md) for the files, the
+commands to run them, and what each OTU demonstrates.
+
 ## Usage
 
 ### 1. (NCBI branch) Annotate BLAST hits with taxonomy (R)
