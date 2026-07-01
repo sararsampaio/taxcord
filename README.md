@@ -94,7 +94,7 @@ output (see the [pipeline](#pipeline) above).
 
 ## Usage
 
-### 1. Annotate BLAST hits with taxonomy (R)
+### 1. (NCBI branch) Annotate BLAST hits with taxonomy (R)
 
 ```bash
 Rscript scripts/annotate_taxonomy.R <blast_input> <taxonomy_output> [accessionTaxa.sql] [--force]
@@ -121,7 +121,7 @@ GB). The script finds or fetches it for you:
 The download is several GB, so the first run takes a while; later runs reuse the
 same file.
 
-### 2. Condense hits into one lineage per query
+### 2. (NCBI branch) Condense hits into one lineage per query
 
 ```bash
 metatax condense data/taxonomy/sample_annotated.txt data/taxonomy/sample_condensed.txt
@@ -137,22 +137,59 @@ Options:
 
 - `--qcovs-min FLOAT` — minimum query coverage for a hit to count (default
   `91`).
-- `--tier RANK:TRIGGER[:FLOOR]` — override the identity bands above. When the
-  best hit's identity is at least `TRIGGER`, the query is resolved down to
-  `RANK`, letting hits at or above `FLOOR` (default = `TRIGGER`) vote.
-  Repeatable; ranks you don't mention keep their defaults
-  (`species:99:97`, `genus:97:97`, `family:90:90`, `order:85:85`,
-  `class:0:0`). For example, to require 98 % for a species call and 96 % for
-  genus:
+- `--tier RANK:TRIGGER[:FLOOR]` — override the identity bands used above.
+  Repeatable. See below.
 
-  ```bash
-  metatax condense in.txt out.txt --tier species:98:97 --tier genus:96
-  ```
+#### Understanding `--tier`
 
-### 2b. (BOLD branch) Prepare a BOLDigger3 result table
+Each tier answers two questions using a hit's **percent identity** (how closely
+the query matched the reference):
 
-Use this **instead of** `condense` for the BOLD side. Identify your COI (or
-other marker) sequences with
+- **`TRIGGER`** — *how good the **best** hit must be to attempt this rank.* If
+  the best hit's identity is **≥ TRIGGER**, the query is resolved down to
+  `RANK`. `TRIGGER` is a lower bound (a `≥`), so "resolve to species when the
+  best hit is ≥99 %" is `species:99` — **not** `species:100`.
+- **`FLOOR`** *(optional)* — *which hits get to **vote** on the call:* every hit
+  with identity **≥ FLOOR** joins the vote (a rank is assigned when one value
+  covers ≥80 % of the voting hits). If you omit `FLOOR`, it defaults to
+  `TRIGGER`.
+
+So the default `species:99:97` means: *"if the best hit is ≥99 %, make a species
+call, and let every hit ≥97 % vote on which species."* `FLOOR` is set below
+`TRIGGER` here so a single top hit doesn't decide the species alone.
+
+You only give each tier a **lower** threshold (`TRIGGER`), never an upper one.
+metatax checks the tiers in order, starting with the highest `TRIGGER`, and
+stops at the **first** tier the best hit reaches (`best hit ≥ TRIGGER`). Because
+it stops there, each tier automatically covers everything from its own
+`TRIGGER` up to just below the next-higher one — so the thresholds carve the
+0–100 % identity scale into bands on their own. With the defaults:
+
+| best-hit identity | tier cleared first | resolves to |
+|-------------------|--------------------|-------------|
+| 99 – 100 %        | `species:99:97`    | species     |
+| 97 – 98.9 %       | `genus:97:97`      | genus       |
+| 90 – 96.9 %       | `family:90:90`     | family      |
+| 85 – 89.9 %       | `order:85:85`      | order       |
+| below 85 %        | `class:0:0`        | class       |
+
+Those five are the **defaults**. `--tier` overrides only the ranks you name and
+leaves the rest untouched. For example, to demand ≥98 % for a species call (with
+voting at ≥97 %) and ≥96 % for genus:
+
+```bash
+metatax condense in.txt out.txt --tier species:98:97 --tier genus:96
+```
+
+Here `genus:96` omits the floor, so its floor is also `96`. To reproduce the
+built-in defaults explicitly you would pass all five:
+`--tier species:99:97 --tier genus:97:97 --tier family:90:90 --tier order:85:85 --tier class:0:0`.
+
+### BOLD branch — prepare a BOLDigger3 result table
+
+This is the BOLD branch's own entry point: the counterpart to steps 1–2, run
+**instead of** Annotate + Condense (not after them). Identify your COI (or other
+marker) sequences with
 [BOLDigger3](https://github.com/DominikBuchner/BOLDigger3) first; it already
 returns one identification per OTU, so there is nothing to collapse — this just
 reshapes its result table into the format `occurrences` reads.
