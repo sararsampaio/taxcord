@@ -363,6 +363,25 @@ black src tests
 ruff check src tests
 ```
 
+## Citation
+
+If you use taxcord in your work, please cite it:
+
+> Sampaio, S. (2026). *taxcord* (v0.1.0) [Computer software]. https://doi.org/10.5281/zenodo.21134500
+
+BibTeX:
+
+```bibtex
+@software{sampaio_taxcord_2026,
+  author  = {Sampaio, Sara},
+  title   = {taxcord},
+  version = {0.1.0},
+  year    = {2026},
+  doi     = {10.5281/zenodo.21134500},
+  url     = {https://github.com/sararsampaio/taxcord}
+}
+```
+
 ## License
 
 Released under the [GNU General Public License v3.0 or later](LICENSE) (GPL-3.0-or-later).
