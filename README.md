@@ -1,6 +1,6 @@
 # taxcord
 
-![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21134500.svg)](https://doi.org/10.5281/zenodo.21134500)
 
 Consensus taxonomic assignment from BLAST hits, refined with GBIF/BOLD
 occurrence records for DNA metabarcoding.
