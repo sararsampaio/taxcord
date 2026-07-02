@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it using the metadata below."
-title: taxcord
+title: "taxcord – a tool to condense NCBI BLAST hits into per-OTU lineages, refine them with GBIF/BOLD occurrences, and reconcile them with BOLD into a consensus"
 abstract: >-
   A Python pipeline that condenses NCBI BLAST hits into one confident lineage
   per OTU, refines them with GBIF/BOLD occurrence counts for one or more chosen

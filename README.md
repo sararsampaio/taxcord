@@ -367,14 +367,14 @@ ruff check src tests
 
 If you use taxcord in your work, please cite it:
 
-> Sampaio, S. (2026). *taxcord* (v0.1.0) [Computer software]. https://doi.org/10.5281/zenodo.21134500
+> Sampaio, S. (2026). *taxcord – a tool to condense NCBI BLAST hits into per-OTU lineages, refine them with GBIF/BOLD occurrences, and reconcile them with BOLD into a consensus* (v0.1.0) [Computer software]. https://doi.org/10.5281/zenodo.21134500
 
 BibTeX:
 
 ```bibtex
 @software{sampaio_taxcord_2026,
   author  = {Sampaio, Sara},
-  title   = {taxcord},
+  title   = {taxcord -- a tool to condense NCBI BLAST hits into per-OTU lineages, refine them with GBIF/BOLD occurrences, and reconcile them with BOLD into a consensus},
   version = {0.1.0},
   year    = {2026},
   doi     = {10.5281/zenodo.21134500},
