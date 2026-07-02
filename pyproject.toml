@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "taxcord"
 version = "0.1.0"
-description = "A Python pipeline that condenses BLAST hits into per-OTU lineages, refines them with GBIF/BOLD occurrence counts, and reconciles the NCBI and BOLD branches"
+description = "A Python pipeline that condenses NCBI BLAST hits into one confident lineage per OTU, refines them with GBIF/BOLD occurrence counts for one or more chosen countries, and reconciles the NCBI and BOLD data into a consensus."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
