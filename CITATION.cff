@@ -12,7 +12,7 @@ authors:
 version: 0.1.0
 date-released: "2026-07-02"
 doi: 10.5281/zenodo.21134500
-license: GPL-3.0-only
+license: GPL-3.0-or-later
 repository-code: "https://github.com/sararsampaio/taxcord"
 url: "https://github.com/sararsampaio/taxcord"
 keywords:
