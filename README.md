@@ -1,5 +1,7 @@
 # taxcord
 
+![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)
+
 Consensus taxonomic assignment from BLAST hits, refined with GBIF/BOLD
 occurrence records for DNA metabarcoding.
 
@@ -55,6 +57,16 @@ identification per OTU, so `bold-prep` only reshapes it. After either, run
 `occurrences` and `filter` on each branch, then `merge` the two.
 
 ## Install
+
+taxcord requires Python ≥ 3.10. Create and activate a dedicated conda
+environment (recommended):
+
+```bash
+conda create -n taxcord python=3.11
+conda activate taxcord
+```
+
+Then install taxcord into it:
 
 ```bash
 pip install -e .            # runtime use
