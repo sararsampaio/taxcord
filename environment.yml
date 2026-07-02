@@ -1,0 +1,9 @@
+name: taxcord
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - r-base
+  - pip
+  - pip:
+      - -e .

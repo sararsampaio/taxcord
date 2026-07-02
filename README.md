@@ -58,29 +58,38 @@ identification per OTU, so `bold-prep` only reshapes it. After either, run
 
 ## Install
 
-taxcord requires Python ≥ 3.10. Create and activate a dedicated conda
-environment (recommended):
+taxcord requires Python ≥ 3.10 and runs in a conda environment.
+
+**One-step setup** — create the environment (Python + R + taxcord) from the
+included [`environment.yml`](environment.yml):
 
 ```bash
-conda create -n taxcord python=3.11
+conda env create -f environment.yml
 conda activate taxcord
 ```
 
-Then install taxcord into it:
+**Or set it up manually:**
 
 ```bash
+conda create -n taxcord -c conda-forge python=3.11 r-base
+conda activate taxcord
 pip install -e .            # runtime use
 pip install -e ".[dev]"     # plus pytest, black, ruff
 ```
 
+`r-base` is included because the annotation step runs in R (see below); adding it
+puts `Rscript` on your PATH inside the env. If you only need the Python steps,
+you can drop `r-base` and `-c conda-forge`.
+
 Installing with `-e` (editable) means code changes take effect immediately
 without reinstalling. After install, the `taxcord` command is on your PATH.
 
-The annotation step is an R script and relies on the third-party
-[`taxonomizr`](https://cran.r-project.org/package=taxonomizr) package (by Scott
-Sherrill-Mix — not part of `taxcord`) to map NCBI taxids to lineages. You don't
-need to install it by hand: `annotate_taxonomy.R` installs it automatically if
-it's missing. To learn how it works or how to cite it, see its
+The annotation step (`annotate_taxonomy.R`) runs in **R**, not Python — the
+`r-base` package from the conda command above provides `Rscript`. It relies on
+the third-party [`taxonomizr`](https://cran.r-project.org/package=taxonomizr)
+package (by Scott Sherrill-Mix — not part of `taxcord`) to map NCBI taxids to
+lineages. You don't need to install it by hand: `annotate_taxonomy.R` installs
+it automatically if it's missing. To learn how it works or how to cite it, see its
 [CRAN page](https://cran.r-project.org/package=taxonomizr) or run
 `citation("taxonomizr")` in R.
 
