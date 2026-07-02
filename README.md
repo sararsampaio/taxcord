@@ -23,18 +23,16 @@ input `occurrences` expects.
 flowchart LR
     A[NCBI BLAST hits] -->|annotate_taxonomy| B[Annotated lineages]
     B -->|condense| C[NCBI: one lineage per OTU]
-    C -->|occurrences| D[+ GBIF/BOLD counts]
+    C -->|occurrences| D[Lineages + GBIF/BOLD counts]
     D -->|filter| E[NCBI supported lineages]
 
     A2[BOLDigger3 results] -->|bold-prep| C2[BOLD lineage table]
-    C2 -->|occurrences| D2[+ GBIF/BOLD counts]
+    C2 -->|occurrences| D2[Lineages + GBIF/BOLD counts]
     D2 -->|filter| E2[BOLD supported lineages]
 
-    E --- J(( ))
-    E2 --- J(( ))
-    J -->|merge| F[Consensus]
-
-    style J fill:none,stroke:none
+    E --> M[merge]
+    E2 --> M[merge]
+    M --> F[Consensus]
 ```
 
 You run `occurrences` and `filter` **twice** — once per branch, on separate
