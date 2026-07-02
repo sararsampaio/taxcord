@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "taxcord"
 version = "0.1.0"
-description = "Consensus taxonomic assignment from BLAST hits, refined with GBIF/BOLD occurrence records for DNA metabarcoding"
+description = "A Python pipeline that condenses BLAST hits into per-OTU lineages, refines them with GBIF/BOLD occurrence counts, and reconciles the NCBI and BOLD branches"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
