@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from metatax.condense import (
+from taxcord.condense import (
     DEFAULT_RANKS,
     DEFAULT_TIERS,
     Hit,

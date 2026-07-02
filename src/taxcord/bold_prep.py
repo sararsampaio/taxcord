@@ -29,7 +29,7 @@ def reshape(df):
     missing = [name for name in ["id", *RANKS] if name not in df.columns]
     if missing:
         raise SystemExit(
-            f"metatax bold-prep: input is missing expected column(s) "
+            f"taxcord bold-prep: input is missing expected column(s) "
             f"{', '.join(missing)}. Found: {', '.join(map(str, df.columns))}"
         )
     out = df[["id", *RANKS]].copy()
@@ -59,7 +59,7 @@ def execute(args):
     duplicates = int(out["id"].duplicated().sum())
     if duplicates:
         raise SystemExit(
-            f"metatax bold-prep: {duplicates} duplicate id(s) in input; "
+            f"taxcord bold-prep: {duplicates} duplicate id(s) in input; "
             f"expected one row per OTU"
         )
 

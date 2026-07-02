@@ -1,6 +1,6 @@
 import pandas as pd
 
-from metatax.filter_occurrence import filter_by_occurrence
+from taxcord.filter_occurrence import filter_by_occurrence
 
 
 def test_bold_source_trims_to_supported_rank():

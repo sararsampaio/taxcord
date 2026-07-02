@@ -6,7 +6,7 @@
 #
 # The input is a tab-delimited BLAST table that includes an `staxids` column.
 # The output is pipe-delimited and gains one Taxonomy.<rank> column per rank,
-# ready for `metatax condense`.
+# ready for `taxcord condense`.
 #
 # The accessionTaxa.sql argument is optional and may live in any folder. When
 # omitted, the database is found in (or downloaded to) a `data/` folder next to

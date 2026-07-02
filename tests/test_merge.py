@@ -1,6 +1,6 @@
 import pandas as pd
 
-from metatax.merge import merge_taxonomy
+from taxcord.merge import merge_taxonomy
 
 LEVELS = ["Phylum", "Class", "Order", "Family", "Genus", "Species"]
 

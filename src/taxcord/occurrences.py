@@ -41,7 +41,7 @@ GBIF_KEY_FIELD = {
 SKIP_TOKENS = {"uncultured", "fungus", "no-match", "IncompleteTaxonomy"}
 
 REQUEST_TIMEOUT = 30
-HEADERS = {"User-Agent": "metatax/1.0 (taxonomy occurrence lookup)"}
+HEADERS = {"User-Agent": "taxcord/1.0 (taxonomy occurrence lookup)"}
 
 # Transient HTTP statuses worth retrying (rate limiting and server errors).
 RETRYABLE_STATUS = {429, 500, 502, 503, 504}
@@ -356,7 +356,7 @@ def _parse_countries(specs):
         code, name = code.strip(), name.strip()
         if not sep or not code or not name:
             raise SystemExit(
-                f"metatax occurrences: --country expects CODE:NAME, got {spec!r} "
+                f"taxcord occurrences: --country expects CODE:NAME, got {spec!r} "
                 f"(e.g. PT:Portugal)"
             )
         countries.append(code.upper())

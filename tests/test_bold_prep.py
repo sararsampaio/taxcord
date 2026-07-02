@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from metatax.bold_prep import reshape
+from taxcord.bold_prep import reshape
 
 
 def _boldigger_frame():

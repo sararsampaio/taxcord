@@ -36,7 +36,7 @@ REPORT_COLUMNS = [
 
 GBIF_MATCH_URL = "https://api.gbif.org/v1/species/match"
 REQUEST_TIMEOUT = 30
-HEADERS = {"User-Agent": "metatax/1.0 (taxonomy merge backbone)"}
+HEADERS = {"User-Agent": "taxcord/1.0 (taxonomy merge backbone)"}
 
 # Map each level to the GBIF match response field and rank parameter.
 _GBIF_FIELD = {level: level.lower() for level in LEVELS}

@@ -200,17 +200,17 @@ def _parse_tier(spec):
     parts = spec.split(":")
     if len(parts) not in (2, 3):
         raise SystemExit(
-            f"metatax condense: --tier expects RANK:TRIGGER[:FLOOR], got {spec!r}"
+            f"taxcord condense: --tier expects RANK:TRIGGER[:FLOOR], got {spec!r}"
         )
     rank = parts[0].strip().lower()
     if not rank:
-        raise SystemExit(f"metatax condense: --tier is missing a rank: {spec!r}")
+        raise SystemExit(f"taxcord condense: --tier is missing a rank: {spec!r}")
     try:
         trigger = float(parts[1])
         floor = float(parts[2]) if len(parts) == 3 else trigger
     except ValueError:
         raise SystemExit(
-            f"metatax condense: --tier thresholds must be numbers: {spec!r}"
+            f"taxcord condense: --tier thresholds must be numbers: {spec!r}"
         )
     return Tier(trigger=trigger, floor=floor, rank=rank)
 

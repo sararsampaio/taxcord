@@ -9,8 +9,8 @@ file is produced by the tools.
 
 | File | Feeds | Format |
 |------|-------|--------|
-| [`example_blast.txt`](example_blast.txt) | `metatax condense` (NCBI branch) | pipe-delimited annotated BLAST hits (many per OTU) |
-| [`example_bold.csv`](example_bold.csv) | `metatax bold-prep` (BOLD branch) | BOLDigger3-style table (one row per OTU) |
+| [`example_blast.txt`](example_blast.txt) | `taxcord condense` (NCBI branch) | pipe-delimited annotated BLAST hits (many per OTU) |
+| [`example_bold.csv`](example_bold.csv) | `taxcord bold-prep` (BOLD branch) | BOLDigger3-style table (one row per OTU) |
 
 The OTU IDs match across both files so the two branches line up at `merge`.
 
@@ -26,19 +26,22 @@ The OTU IDs match across both files so the two branches line up at `merge`.
 
 ```bash
 # NCBI branch
-metatax condense    examples/example_blast.txt  ncbi_condensed.txt
-metatax occurrences ncbi_condensed.txt          ncbi_ip.txt
-metatax filter      ncbi_ip.txt                 ncbi.csv
+taxcord condense    examples/example_blast.txt  ncbi_condensed.txt
+taxcord occurrences ncbi_condensed.txt          ncbi_ip.txt
+taxcord filter      ncbi_ip.txt                 ncbi.csv
 
 # BOLD branch
-metatax bold-prep   examples/example_bold.csv   bold_condensed.txt
-metatax occurrences bold_condensed.txt          bold_ip.txt
-metatax filter      bold_ip.txt                 bold.csv
+taxcord bold-prep   examples/example_bold.csv   bold_condensed.txt
+taxcord occurrences bold_condensed.txt          bold_ip.txt
+taxcord filter      bold_ip.txt                 bold.csv
 
 # reconcile the two branches (--gbif-backbone keeps OTU0004's species)
-metatax merge       ncbi.csv  bold.csv  consensus.csv --gbif-backbone
+taxcord merge       ncbi.csv  bold.csv  consensus.csv --gbif-backbone
 ```
 
 The `occurrences` step needs network access (it queries GBIF and BOLD); the
 counts you get will reflect whatever those databases currently hold for these
 taxa.
+
+The `merge --gbif-backbone` step also writes `consensus.reconciliation.tsv`
+next to the output, logging the OTU0004 family fix (see the [main README](../README.md#--gbif-backbone-optional-needs-network)).

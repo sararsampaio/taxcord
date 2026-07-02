@@ -17,7 +17,7 @@ COMMANDS = {
 
 def build_parser():
     parser = argparse.ArgumentParser(
-        prog="metatax",
+        prog="taxcord",
         description="Taxonomic assignment and refinement for metabarcoding data.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
