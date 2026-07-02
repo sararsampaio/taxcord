@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: taxcord
+abstract: >-
+  A Python pipeline that condenses NCBI BLAST hits into one confident lineage
+  per OTU, refines them with GBIF/BOLD occurrence counts for one or more chosen
+  countries, and reconciles NCBI and BOLD data into a consensus.
+type: software
+authors:
+  - given-names: Sara
+    family-names: Sampaio
+version: 0.1.0
+date-released: "2026-07-02"
+doi: 10.5281/zenodo.21134500
+license: GPL-3.0-or-later
+repository-code: "https://github.com/sararsampaio/taxcord"
+url: "https://github.com/sararsampaio/taxcord"
+keywords:
+  - metabarcoding
+  - dna-barcoding
+  - taxonomy
+  - bioinformatics
+  - ncbi
+  - bold
+  - gbif
