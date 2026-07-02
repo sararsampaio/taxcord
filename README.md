@@ -8,7 +8,7 @@ occurrence records for DNA metabarcoding.
 `taxcord` turns raw BLAST hits into a single, defensible taxonomic lineage per
 query sequence (OTU/ASV), then refines those lineages against regional
 occurrence records from [GBIF](https://www.gbif.org/) and
-[BOLD](https://www.boldsystems.org/). It targets diet metabarcoding studies and
+[BOLD](https://www.boldsystems.org/). It targets metabarcoding studies and
 applies to any BLAST-based taxonomic assignment.
 
 ## Pipeline
